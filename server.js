@@ -1,24 +1,51 @@
+const express = require('express');
+const cors = require('cors');
+const OpenAI = require('openai');
+require('dotenv').config();
+
+const app = express();
+
+// Estas líneas son las que faltan y causan el error
+app.use(cors());
+app.use(express.json());
+
+const poe = new OpenAI({
+  apiKey: process.env.POE_API_KEY, 
+  baseURL: "https://api.poe.com/v1"
+});
+
+// --- RUTA 1: CHAT DE TEXTO ---
 app.post('/api/chat', async (req, res) => {
   try {
     const { prompt } = req.body;
-    console.log("Recibido prompt:", prompt); // Esto saldrá en tus logs de Render
 
     const completion = await poe.chat.completions.create({
-      model: "gemini-1.5-flash", // Nombre corregido
+      model: "gemini-1.5-flash", 
       messages: [{ role: "user", content: prompt }],
     });
 
-    if (!completion.choices || completion.choices.length === 0) {
-      throw new Error("Poe no devolvió opciones de respuesta");
-    }
-
     res.json({ text: completion.choices[0].message.content });
   } catch (error) {
-    console.error("DETALLE TÉCNICO EN LOGS:", error.message);
-    // Devolvemos el error detallado para que lo veas en el chat de la app
-    res.status(500).json({ 
-      error: "Error en el servidor", 
-      message: error.message 
-    });
+    console.error("DETALLE TÉCNICO:", error.message);
+    res.status(500).json({ error: "Error en el servidor", details: error.message });
   }
+});
+
+// --- RUTA 2: IMÁGENES ---
+app.post('/api/generate-image', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    const response = await poe.chat.completions.create({
+      model: "flux-schnell",
+      messages: [{ role: "user", content: prompt }],
+    });
+    res.json({ imageUrl: response.choices[0].message.content });
+  } catch (error) {
+    res.status(500).json({ error: "Error al generar imagen", details: error.message });
+  }
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor listo en puerto ${PORT}`);
 });
