@@ -4,8 +4,6 @@ const OpenAI = require('openai');
 require('dotenv').config();
 
 const app = express();
-
-// Estas líneas son las que faltan y causan el error
 app.use(cors());
 app.use(express.json());
 
@@ -14,13 +12,13 @@ const poe = new OpenAI({
   baseURL: "https://api.poe.com/v1"
 });
 
-// --- RUTA 1: CHAT DE TEXTO ---
+// --- RUTA 1: CHAT DE TEXTO (DeepSeek-V3.2) ---
 app.post('/api/chat', async (req, res) => {
   try {
     const { prompt } = req.body;
 
     const completion = await poe.chat.completions.create({
-      model: "gemini-1.5-flash", 
+      model: "deepseek-v3.2", // Este es el nombre exacto de la documentación
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -31,12 +29,12 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// --- RUTA 2: IMÁGENES ---
+// --- RUTA 2: GENERACIÓN DE IMÁGENES ---
 app.post('/api/generate-image', async (req, res) => {
   try {
     const { prompt } = req.body;
     const response = await poe.chat.completions.create({
-      model: "flux-schnell",
+      model: "flux-schnell", 
       messages: [{ role: "user", content: prompt }],
     });
     res.json({ imageUrl: response.choices[0].message.content });
