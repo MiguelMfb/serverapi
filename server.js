@@ -7,43 +7,53 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Configuración del cliente
 const poe = new OpenAI({
-  apiKey: process.env.POE_API_KEY, 
+  apiKey: process.env.POE_API_KEY,
   baseURL: "https://api.poe.com/v1"
 });
 
-// --- RUTA 1: CHAT DE TEXTO (DeepSeek-V3.2) ---
 app.post('/api/chat', async (req, res) => {
   try {
     const { prompt } = req.body;
+    console.log("Recibido prompt para Poe:", prompt);
 
     const completion = await poe.chat.completions.create({
-      model: "deepseek-v3.2", // Este es el nombre exacto de la documentación
+      // Si "deepseek-v3.2" falla, Poe recomienda usar el nombre del bot directamente
+      model: "DeepSeek-V3", 
       messages: [{ role: "user", content: prompt }],
     });
 
+    if (!completion.choices) {
+      throw new Error("Respuesta de Poe malformada");
+    }
+
     res.json({ text: completion.choices[0].message.content });
   } catch (error) {
-    console.error("DETALLE TÉCNICO:", error.message);
-    res.status(500).json({ error: "Error en el servidor", details: error.message });
+    // ESTO ES LO QUE VEREMOS EN LOS LOGS DE RENDER
+    console.error("DETALLE DEL ERROR EN POE:", error.message);
+    res.status(500).json({ 
+      error: "Error interno en el servidor", 
+      message: error.message 
+    });
   }
 });
 
-// --- RUTA 2: GENERACIÓN DE IMÁGENES ---
 app.post('/api/generate-image', async (req, res) => {
   try {
     const { prompt } = req.body;
     const response = await poe.chat.completions.create({
-      model: "flux-schnell", 
+      model: "FLUX-Schnell",
       messages: [{ role: "user", content: prompt }],
     });
     res.json({ imageUrl: response.choices[0].message.content });
   } catch (error) {
-    res.status(500).json({ error: "Error al generar imagen", details: error.message });
+    console.error("ERROR EN IMAGEN:", error.message);
+    res.status(500).json({ error: "Error en imagen", message: error.message });
   }
 });
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor listo en puerto ${PORT}`);
+  console.log(`🚀 NovaCraft Backend operativo en puerto ${PORT}`);
 });
